@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MY Cosmetics – Funnel Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Instrument Sans', -apple-system, sans-serif; background: #f5f5f5; color: #121512; line-height: 1.5; }
+
+.container { max-width: 1100px; margin: 0 auto; padding: 40px 24px 60px; }
+
+/* Header */
+.header { text-align: center; margin-bottom: 48px; }
+.header-brand { font-size: 13px; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: #525252; margin-bottom: 8px; }
+.header h1 { font-size: 36px; font-weight: 700; color: #121512; line-height: 1.2; }
+.header h1 span { color: #1A73E8; }
+.header-meta { display: flex; align-items: center; justify-content: center; gap: 16px; margin-top: 16px; }
+.header-pill { display: inline-flex; align-items: center; gap: 6px; background: #fff; border: 1px solid #e3e3e3; border-radius: 60px; padding: 6px 16px; font-size: 13px; color: #525252; }
+.header-pill .dot { width: 8px; height: 8px; border-radius: 50%; background: #22C55E; }
+
+/* KPI Row */
+.kpi-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 48px; }
+.kpi-card { background: #fff; border: 1px solid #e3e3e3; border-radius: 12px; padding: 20px; text-align: center; transition: box-shadow 0.2s; }
+.kpi-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
+.kpi-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: #525252; margin-bottom: 8px; }
+.kpi-value { font-size: 28px; font-weight: 700; color: #121512; }
+.kpi-value.blue { color: #1A73E8; }
+.kpi-value.green { color: #22C55E; }
+.kpi-value.red { color: #DC2626; }
+.kpi-sub { font-size: 11px; color: #999; margin-top: 4px; }
+
+/* Section */
+.section { margin-bottom: 48px; }
+.section-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+.section-dot { width: 8px; height: 8px; border-radius: 50%; background: #1A73E8; }
+.section-label { font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; color: #525252; }
+
+/* ── FUNNEL VISUAL ── */
+.funnel-container { background: #fff; border: 1px solid #e3e3e3; border-radius: 16px; padding: 40px 32px; }
+
+.funnel-visual { display: flex; flex-direction: column; align-items: center; gap: 0; max-width: 800px; margin: 0 auto; }
+
+.funnel-step { width: 100%; display: flex; align-items: center; gap: 0; position: relative; }
+
+.funnel-bar-wrapper { flex: 1; display: flex; justify-content: center; position: relative; }
+
+.funnel-bar {
+    position: relative;
+    height: 52px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    transition: all 0.3s;
+    overflow: hidden;
+}
+.funnel-bar:hover { transform: scale(1.015); }
+
+.funnel-bar .f-label { font-size: 13px; font-weight: 600; color: #fff; z-index: 1; white-space: nowrap; }
+.funnel-bar .f-count { font-size: 20px; font-weight: 700; color: #fff; z-index: 1; }
+
+/* Color themes for funnel bars */
+.funnel-bar.landing { background: #121512; }
+.funnel-bar.quiz { background: #1A73E8; }
+.funnel-bar.quiz-mid { background: #2d7fe9; }
+.funnel-bar.quiz-late { background: #4a90ec; }
+.funnel-bar.analyzing { background: #6ba3ef; }
+.funnel-bar.qualified { background: #22C55E; }
+.funnel-bar.wa-click { background: #25D366; }
+.funnel-bar.wa-sent { background: #DC2626; }
+
+/* Connector between steps */
+.funnel-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    position: relative;
+}
+.funnel-connector::before {
+    content: "";
+    display: block;
+    width: 2px;
+    height: 100%;
+    background: #e3e3e3;
+}
+.funnel-connector .loss-badge {
+    position: absolute;
+    right: 8%;
+    background: #fff;
+    border: 1px solid #e3e3e3;
+    border-radius: 60px;
+    padding: 2px 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #DC2626;
+    white-space: nowrap;
+}
+.funnel-connector .loss-badge.ok {
+    color: #22C55E;
+    border-color: #d4f5de;
+}
+.funnel-connector .loss-badge.critical {
+    background: #FEF2F2;
+    border-color: #FECACA;
+    color: #DC2626;
+}
+
+/* Conversion annotation on the left */
+.funnel-conv {
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translate(-100%, -50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    white-space: nowrap;
+    padding-right: 12px;
+}
+
+/* ── FUNNEL TABLE ── */
+.data-table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e3e3e3; border-radius: 12px; overflow: hidden; }
+.data-table th { background: #121512; color: #fff; padding: 12px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; text-align: center; }
+.data-table th:first-child { text-align: left; }
+.data-table td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 14px; text-align: center; color: #121512; }
+.data-table td:first-child { text-align: left; font-weight: 600; }
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tr:hover { background: #fafafa; }
+.data-table .mono { font-family: 'SF Mono', monospace; font-size: 12px; color: #999; }
+.data-table .num { font-weight: 700; font-size: 16px; }
+.data-table .drop { color: #DC2626; font-weight: 600; font-size: 13px; }
+.data-table .drop.ok { color: #22C55E; }
+.data-table .conv { color: #1A73E8; font-weight: 600; font-size: 13px; }
+
+/* Two col */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+
+/* Mini cards */
+.card { background: #fff; border: 1px solid #e3e3e3; border-radius: 12px; padding: 24px; }
+.card-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1.2px; color: #525252; margin-bottom: 16px; }
+
+.source-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #f0f0f0; }
+.source-row:last-child { border-bottom: none; }
+.source-name { font-size: 14px; color: #121512; }
+.source-val { font-weight: 700; color: #121512; }
+.source-pct { font-size: 12px; color: #999; margin-left: 8px; }
+
+/* Audience grid */
+.audience-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.audience-box { background: #f5f5f5; border-radius: 8px; padding: 16px; }
+.audience-box h4 { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #525252; margin-bottom: 10px; }
+.aud-item { display: flex; justify-content: space-between; padding: 4px 0; font-size: 13px; }
+.aud-item .pct { font-weight: 700; color: #1A73E8; }
+
+/* Log table */
+.log-table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; border: 1px solid #e3e3e3; border-radius: 12px; overflow: hidden; }
+.log-table th { background: #121512; color: #fff; padding: 10px 16px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600; text-align: center; }
+.log-table th:first-child { text-align: left; }
+.log-table td { padding: 12px 16px; border-bottom: 1px solid #f0f0f0; font-size: 13px; text-align: center; }
+.log-table td:first-child { text-align: left; color: #525252; }
+.log-table tr:last-child td { border-bottom: none; }
+
+/* Notes */
+.notes-card { background: #fff; border: 1px solid #e3e3e3; border-radius: 12px; padding: 24px; }
+.note-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0f0f0; font-size: 13px; color: #525252; line-height: 1.6; }
+.note-item:last-child { border-bottom: none; }
+.note-dot { width: 8px; height: 8px; min-width: 8px; border-radius: 50%; margin-top: 6px; }
+.note-dot.red { background: #DC2626; }
+.note-dot.blue { background: #1A73E8; }
+.note-dot.green { background: #22C55E; }
+.note-dot.amber { background: #F59E0B; }
+
+/* Footer */
+.footer { text-align: center; padding: 32px 0 0; font-size: 11px; color: #ccc; letter-spacing: 1px; }
+
+/* Tags */
+.tag { display: inline-block; border: 1px solid #e3e3e3; border-radius: 60px; padding: 3px 12px; font-size: 11px; color: #525252; background: #f5f5f5; }
+
+@media (max-width: 900px) {
+    .kpi-row { grid-template-columns: repeat(3, 1fr); }
+    .two-col { grid-template-columns: 1fr; }
+    .audience-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-brand">Modern Connect</div>
+        <h1>MY Cosmetics – <span>TikTok Ad Funnel</span></h1>
+        <div class="header-meta">
+            <div class="header-pill">
+                <div class="dot"></div>
+                Kampagne live
+            </div>
+            <div class="header-pill">Stand: 20.04.2026, 21:57 Uhr</div>
+            <div class="header-pill">Lash Stylistin Schulung · Regensburg</div>
+        </div>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="kpi-row">
+        <div class="kpi-card">
+            <div class="kpi-label">Visitors</div>
+            <div class="kpi-value">221</div>
+            <div class="kpi-sub">Letzte 7 Tage</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Page Views</div>
+            <div class="kpi-value">527</div>
+            <div class="kpi-sub">2.4 PV / Visitor</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Bounce Rate</div>
+            <div class="kpi-value red">88%</div>
+            <div class="kpi-sub">Normal bei TikTok</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Quiz-Starter</div>
+            <div class="kpi-value blue">22</div>
+            <div class="kpi-sub">10% der Visitors</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">Qualifiziert</div>
+            <div class="kpi-value green">16</div>
+            <div class="kpi-sub">73% Durchlaufrate</div>
+        </div>
+        <div class="kpi-card">
+            <div class="kpi-label">WA-Klicks</div>
+            <div class="kpi-value blue">6</div>
+            <div class="kpi-sub" style="color:#DC2626">0 gesendet</div>
+        </div>
+    </div>
+
+    <!-- Funnel Visual -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-dot"></div>
+            <div class="section-label">Funnel Visualisierung</div>
+        </div>
+        <div class="funnel-container">
+            <div class="funnel-visual">
+
+                <!-- 1. Landingpage -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar landing" style="width: 100%;">
+                            <span class="f-label">Landingpage</span>
+                            <span class="f-count">221</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge critical">-199 verloren · 90%</span>
+                </div>
+
+                <!-- 2. Quiz Frage 1 -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar quiz" style="width: 52%;">
+                            <span class="f-label">Quiz Frage 1</span>
+                            <span class="f-count">22</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge">-2</span>
+                </div>
+
+                <!-- 3. Quiz Frage 2 -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar quiz-mid" style="width: 48%;">
+                            <span class="f-label">Quiz Frage 2</span>
+                            <span class="f-count">20</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge ok">0 verloren</span>
+                </div>
+
+                <!-- 4. Quiz Frage 3 -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar quiz-mid" style="width: 48%;">
+                            <span class="f-label">Quiz Frage 3</span>
+                            <span class="f-count">20</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge">-2</span>
+                </div>
+
+                <!-- 5. Quiz Frage 4 -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar quiz-late" style="width: 44%;">
+                            <span class="f-label">Quiz Frage 4</span>
+                            <span class="f-count">18</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge ok">0 verloren</span>
+                </div>
+
+                <!-- 6. Analyse-Screen -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar analyzing" style="width: 44%;">
+                            <span class="f-label">Analyse-Screen</span>
+                            <span class="f-count">18</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge">-2</span>
+                </div>
+
+                <!-- 7. Ergebnis: Qualifiziert -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar qualified" style="width: 40%;">
+                            <span class="f-label">Ergebnis: Qualifiziert</span>
+                            <span class="f-count">16</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge critical">-10 verloren · 62.5%</span>
+                </div>
+
+                <!-- 8. WhatsApp Klick -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar wa-click" style="width: 28%;">
+                            <span class="f-label">WhatsApp Klick</span>
+                            <span class="f-count">6</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="funnel-connector">
+                    <span class="loss-badge critical">-6 verloren · 100%!</span>
+                </div>
+
+                <!-- 9. WhatsApp gesendet -->
+                <div class="funnel-step">
+                    <div class="funnel-bar-wrapper">
+                        <div class="funnel-bar wa-sent" style="width: 20%;">
+                            <span class="f-label">WhatsApp gesendet</span>
+                            <span class="f-count">0</span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Funnel Table -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-dot"></div>
+            <div class="section-label">Funnel Drop-Off Tabelle</div>
+        </div>
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Stufe</th>
+                    <th>Pfad</th>
+                    <th>Visitors</th>
+                    <th>Drop-Off</th>
+                    <th>Drop-Off %</th>
+                    <th>Conv. vom Start</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Landingpage</td>
+                    <td class="mono">/</td>
+                    <td class="num">221</td>
+                    <td>—</td>
+                    <td>—</td>
+                    <td class="conv">100%</td>
+                </tr>
+                <tr>
+                    <td>Quiz Frage 1</td>
+                    <td class="mono">/q1</td>
+                    <td class="num">22</td>
+                    <td class="drop">-199</td>
+                    <td class="drop">90.0%</td>
+                    <td class="conv">10.0%</td>
+                </tr>
+                <tr>
+                    <td>Quiz Frage 2</td>
+                    <td class="mono">/q2</td>
+                    <td class="num">20</td>
+                    <td class="drop">-2</td>
+                    <td class="drop">9.1%</td>
+                    <td class="conv">9.0%</td>
+                </tr>
+                <tr>
+                    <td>Quiz Frage 3</td>
+                    <td class="mono">/q3</td>
+                    <td class="num">20</td>
+                    <td class="drop ok">0</td>
+                    <td class="drop ok">0.0%</td>
+                    <td class="conv">9.0%</td>
+                </tr>
+                <tr>
+                    <td>Quiz Frage 4</td>
+                    <td class="mono">/q4</td>
+                    <td class="num">18</td>
+                    <td class="drop">-2</td>
+                    <td class="drop">10.0%</td>
+                    <td class="conv">8.1%</td>
+                </tr>
+                <tr>
+                    <td>Analyse-Screen</td>
+                    <td class="mono">/analyzing</td>
+                    <td class="num">18</td>
+                    <td class="drop ok">0</td>
+                    <td class="drop ok">0.0%</td>
+                    <td class="conv">8.1%</td>
+                </tr>
+                <tr>
+                    <td>Ergebnis (Qualified)</td>
+                    <td class="mono">/qualified</td>
+                    <td class="num">16</td>
+                    <td class="drop">-2</td>
+                    <td class="drop">11.1%</td>
+                    <td class="conv">7.2%</td>
+                </tr>
+                <tr style="background:#f0fdf4">
+                    <td><strong>WhatsApp Klick</strong></td>
+                    <td class="mono">wa.me</td>
+                    <td class="num" style="color:#22C55E">6</td>
+                    <td class="drop">-10</td>
+                    <td class="drop">62.5%</td>
+                    <td class="conv">2.7%</td>
+                </tr>
+                <tr style="background:#fef2f2">
+                    <td><strong>WhatsApp gesendet</strong></td>
+                    <td class="mono">—</td>
+                    <td class="num" style="color:#DC2626">0</td>
+                    <td class="drop">-6</td>
+                    <td class="drop">100.0%</td>
+                    <td class="conv" style="color:#DC2626">0.0%</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Traffic & Audience -->
+    <div class="two-col section">
+        <div>
+            <div class="section-header">
+                <div class="section-dot"></div>
+                <div class="section-label">Traffic Quellen</div>
+            </div>
+            <div class="card">
+                <div class="source-row">
+                    <span class="source-name">tiktok.com</span>
+                    <span><span class="source-val">182</span><span class="source-pct">82.4%</span></span>
+                </div>
+                <div class="source-row">
+                    <span class="source-name">ads.tiktok.com</span>
+                    <span><span class="source-val">1</span><span class="source-pct">0.5%</span></span>
+                </div>
+                <div class="source-row">
+                    <span class="source-name">bing.com</span>
+                    <span><span class="source-val">1</span><span class="source-pct">0.5%</span></span>
+                </div>
+                <div class="source-row">
+                    <span class="source-name">Direct / Andere</span>
+                    <span><span class="source-val">37</span><span class="source-pct">16.7%</span></span>
+                </div>
+            </div>
+        </div>
+        <div>
+            <div class="section-header">
+                <div class="section-dot"></div>
+                <div class="section-label">Zielgruppe</div>
+            </div>
+            <div class="card">
+                <div class="audience-grid">
+                    <div class="audience-box">
+                        <h4>Geräte</h4>
+                        <div class="aud-item"><span>Mobile</span><span class="pct">96%</span></div>
+                        <div class="aud-item"><span>Desktop</span><span class="pct">3%</span></div>
+                        <div class="aud-item"><span>Tablet</span><span class="pct">&lt;1%</span></div>
+                    </div>
+                    <div class="audience-box">
+                        <h4>Betriebssystem</h4>
+                        <div class="aud-item"><span>iOS</span><span class="pct">65%</span></div>
+                        <div class="aud-item"><span>Android</span><span class="pct">32%</span></div>
+                        <div class="aud-item"><span>Mac</span><span class="pct">2%</span></div>
+                        <div class="aud-item"><span>Windows</span><span class="pct">1%</span></div>
+                    </div>
+                    <div class="audience-box">
+                        <h4>Länder</h4>
+                        <div class="aud-item"><span>Deutschland</span><span class="pct">96%</span></div>
+                        <div class="aud-item"><span>USA</span><span class="pct">2%</span></div>
+                        <div class="aud-item"><span>Frankreich</span><span class="pct">&lt;1%</span></div>
+                    </div>
+                    <div class="audience-box">
+                        <h4>Browser</h4>
+                        <div class="aud-item"><span>Safari (in-app)</span><span class="pct">~65%</span></div>
+                        <div class="aud-item"><span>Chrome</span><span class="pct">~32%</span></div>
+                        <div class="aud-item"><span>Andere</span><span class="pct">~3%</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tracking Log -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-dot"></div>
+            <div class="section-label">Tracking Log</div>
+        </div>
+        <table class="log-table">
+            <thead>
+                <tr>
+                    <th style="text-align:left">Datum / Uhrzeit</th>
+                    <th>Visitors</th>
+                    <th>Quiz-Starter</th>
+                    <th>Qualifiziert</th>
+                    <th>WA-Klicks</th>
+                    <th>WA gesendet</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>20.04.2026, 21:57</td>
+                    <td><strong>221</strong></td>
+                    <td><strong>22</strong></td>
+                    <td><strong>16</strong></td>
+                    <td><strong>6</strong></td>
+                    <td><strong style="color:#DC2626">0</strong></td>
+                </tr>
+                <!-- Neue Einträge hier -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Notes -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-dot"></div>
+            <div class="section-label">Notizen & Erkenntnisse</div>
+        </div>
+        <div class="notes-card">
+            <div class="note-item">
+                <div class="note-dot red"></div>
+                <span>6 Personen haben auf WhatsApp geklickt, 0 haben tatsächlich eine Nachricht gesendet — vorausgefüllte Nachricht zu lang/formell</span>
+            </div>
+            <div class="note-item">
+                <div class="note-dot amber"></div>
+                <span>Cookie Consent Gate blockiert TikTok Pixel bei ~80% der User — TikTok Ads Manager zeigt weniger Conversions als real</span>
+            </div>
+            <div class="note-item">
+                <div class="note-dot green"></div>
+                <span>Quiz-Durchlaufrate (q1 → qualified) liegt bei 73% — sehr stark</span>
+            </div>
+            <div class="note-item">
+                <div class="note-dot blue"></div>
+                <span>Traffic-Spike am 18./19. April — Kampagnenstart</span>
+            </div>
+            <div class="note-item">
+                <div class="note-dot green"></div>
+                <span>TikTok Business Center approved (20.04.2026)</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Änderungshistorie -->
+    <div class="section">
+        <div class="section-header">
+            <div class="section-dot" style="background:#1A73E8"></div>
+            <h2 class="section-title">Änderungshistorie</h2>
+        </div>
+        <div class="notes-box">
+            <div class="note-item" style="flex-direction:column; align-items:flex-start; gap:8px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div class="note-dot blue"></div>
+                    <strong style="font-size:14px;">20. April 2026 — Funnel-Optimierung #1</strong>
+                </div>
+                <div style="padding-left:22px; font-size:13px; line-height:1.7; color:#525252;">
+                    <div style="margin-bottom:12px;">
+                        <strong style="color:#121512;">1. Cookie Consent & Tracking</strong><br>
+                        <span style="color:#991B1B;">Vorher:</span> TikTok Pixel wurde erst geladen, wenn der Cookie-Banner aktiv akzeptiert wurde → ca. 80% der Besucher wurden nicht erfasst<br>
+                        <span style="color:#166534;">Nachher:</span> Pixel lädt jetzt direkt bei allen Besuchern. Cookie-Banner bleibt sichtbar (Datenschutz), blockiert aber das Tracking nicht mehr. Alle Conversions werden ab sofort korrekt an TikTok gemeldet.
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <strong style="color:#121512;">2. WhatsApp-Nachricht</strong><br>
+                        <span style="color:#991B1B;">Vorher:</span> Lange, detaillierte Nachricht mit persönlichen Angaben (Situation, Startzeitraum) — Nutzerinnen haben die Nachricht nicht abgeschickt (0 von 6)<br>
+                        <span style="color:#166534;">Nachher:</span> Kurze, lockere Nachricht: „Hey Melisa! 👋 Ich hab den Lash-Check gemacht – bin geeignet! Erzähl mir mehr 💕" — niedrigere Hürde zum Absenden
+                    </div>
+                    <div style="margin-bottom:12px;">
+                        <strong style="color:#121512;">3. Qualified-Seite (Beschreibungstext)</strong><br>
+                        <span style="color:#991B1B;">Vorher:</span> „Jetzt fehlt nur noch ein Klick: Schick Melisa die vorbereitete WhatsApp-Nachricht ab, damit sie sich persönlich bei dir melden kann."<br>
+                        <span style="color:#166534;">Nachher:</span> „Melisa meldet sich persönlich bei dir – tippe einfach auf den Button und drücke Senden."
+                    </div>
+                    <div>
+                        <strong style="color:#121512;">Nicht verändert:</strong><br>
+                        TikTok Ads — Kampagnen laufen unverändert weiter. Noch zu wenig Daten für belastbare Auswertung. Headline-Split-Test (A/B) läuft weiter — Auswertung sobald genug Leads für einen aussagekräftigen Vergleich vorliegen.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="footer">MY Cosmetics Funnel Dashboard — Intern</div>
+
+</div>
+
+</body>
+</html>
