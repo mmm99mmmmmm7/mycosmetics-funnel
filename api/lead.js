@@ -15,8 +15,27 @@ export default async function handler(req, res) {
     const budget = data.budget || '-';
     const ts = data.timestamp || '-';
 
-    // E-Mail direkt an my.cosmetics@gmx.de via formsubmit.co
-    const emailResult = await fetch('https://formsubmit.co/ajax/my.cosmetics@gmx.de', {
+    const ntfyBody = [
+      'Name: ' + vorname,
+      'WhatsApp: ' + wa,
+      'Situation: ' + sit,
+      'Start: ' + start,
+      'Budget: ' + budget,
+      'Zeit: ' + ts,
+    ].join('\n');
+
+    // ntfy.sh Push-Notification
+    await fetch('https://ntfy.sh/mycosmetics-leads-br7x9k2m', {
+      method: 'POST',
+      headers: {
+        'Title': 'Neuer Lead: ' + vorname.replace(/[^\x20-\x7E]/g, ''),
+        'Priority': '4',
+      },
+      body: ntfyBody,
+    }).catch(() => {});
+
+    // E-Mail via formsubmit.co
+    await fetch('https://formsubmit.co/ajax/my.cosmetics@gmx.de', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
@@ -29,12 +48,9 @@ export default async function handler(req, res) {
         Budget: budget,
         Zeitpunkt: ts,
       }),
-    }).then(r => ({ ok: r.ok, status: r.status }))
-      .catch(e => ({ ok: false, error: String(e) }));
+    }).catch(() => {});
 
-    console.log('email result:', JSON.stringify(emailResult));
     console.log('NEW LEAD:', JSON.stringify({ vorname, wa, sit, start, budget, ts }));
-
     return res.status(200).json({ success: true });
   } catch (error) {
     console.error('Lead handler error:', String(error));
